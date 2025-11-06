@@ -1,16 +1,30 @@
-version: "3.9"
+version: "3"
 
 services:
   db:
-    image: postgres:15
+    image: mysql:8
+    container_name: mysql-db
+    restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mydb
+      MYSQL_ROOT_PASSWORD: yourpassword
+      MYSQL_DATABASE: recipes
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: appuserpass
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - pg_data:/var/lib/postgresql/data
+      - db_data:/var/lib/mysql
+
+  app:
+    build: .
+    container_name: fastapi-app
+    restart: always
+    environment:
+      DATABASE_URL: mysql+mysqlconnector://appuser:appuserpass@db:3306/recipes
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
 
 volumes:
-  pg_data:
+  db_data:
