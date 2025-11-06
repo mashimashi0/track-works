@@ -1,0 +1,65 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from ..database import SessionLocal
+from .. import schemas, crud
+
+router = APIRouter(prefix="/recipes", tags=["Recipes"])
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@router.get("/", response_model=list[schemas.Recipe])
+def list_recipes(db: Session = Depends(get_db)):
+    return crud.get_recipes(db)
+
+@router.get("/{id}", response_model=schemas.RecipeDetailsResponse)
+def get_recipe(id: str, db: Session = Depends(get_db)):
+    recipe = crud.get_recipe(db, id)
+    if not recipe:
+        raise HTTPException(status_code=404, detail="Not found")
+    return {
+        "message": "Recipe details by id",
+        "recipe": [recipe]  # リストとして返す
+    }
+
+@router.post("/", response_model=schemas.RecipeCreateResponse)
+def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
+    try:
+        # 必須フィールドのチェック
+        if not all([recipe.title, recipe.making_time, recipe.serves, recipe.ingredients, recipe.cost]):
+            return {
+                "message": "Recipe creation failed!",
+                "required": "title, making_time, serves, ingredients, cost"
+            }
+        
+        created_recipe = crud.create_recipe(db, recipe)
+        return {
+            "message": "Recipe successfully created!",
+            "recipe": [created_recipe]
+        }
+    except Exception as e:
+        return {
+            "message": "Recipe creation failed!",
+            "required": "title, making_time, serves, ingredients, cost"
+        }
+
+@router.patch("/{id}", response_model=schemas.RecipeUpdateResponse)
+def update_recipe(id: str, recipe: schemas.RecipeUpdate, db: Session = Depends(get_db)):
+    updated = crud.update_recipe(db, id, recipe)
+    if not updated:
+        raise HTTPException(status_code=404, detail="Not found")
+    return {
+        "message": "Recipe successfully updated!",
+        "recipe": [updated]  # リストとして返す
+    }
+
+@router.delete("/{id}")
+def delete_recipe(id: str, db: Session = Depends(get_db)):
+    ok = crud.delete_recipe(db, id)
+    if not ok:
+        return {"message": "No Recipe found"}
+    return {  "message": "Recipe successfully removed!" }
