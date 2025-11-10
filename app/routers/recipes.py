@@ -45,11 +45,10 @@ def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
             return JSONResponse(status_code=200, content=err)
 
         created_recipe = crud.create_recipe(db, recipe)
-        success = schemas.RecipeCreateResponse(
-            message="Recipe successfully created!",
-            recipe=[created_recipe]
-        )
-        return success
+        return {
+            "message": "Recipe successfully created!",
+            "recipe": [created_recipe]
+        }
 
     except Exception:
         err = schemas.RecipeCreateErrorResponse(
