@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from ..database import SessionLocal
 from .. import schemas, crud
+from typing import Union
 
 router = APIRouter(prefix="/recipes", tags=["Recipes"])
 
@@ -22,41 +24,37 @@ def get_recipe(id: str, db: Session = Depends(get_db)):
     if not recipe:
         raise HTTPException(status_code=404, detail="Not found")
     return {
-        "message": "Recipe details by id",
-        "recipe": [recipe]  # リストとして返す
+        "recipes": [recipe]  # リストとして返す
     }
 
-@router.post("/", response_model=schemas.RecipeCreateResponse)
+@router.post("/", response_model=Union[schemas.RecipeCreateResponse, schemas.RecipeCreateErrorResponse])
 def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
     try:
-        # 必須フィールドのチェック
-        if not all([recipe.title, recipe.making_time, recipe.serves, recipe.ingredients, recipe.cost]):
-            return {
-                    "message": "Recipe creation failed!",
-                    "required": "title, making_time, serves, ingredients, cost"
-            }
         # 必須フィールドのチェック（空文字はNG、0はOK）
         empty_str_fields = any(
             isinstance(getattr(recipe, f), str) and getattr(recipe, f).strip() == ""
             for f in ("title", "making_time", "serves", "ingredients")
-        )        
+        )
         if empty_str_fields or recipe.cost is None:
-            return {
-                    "message": "Recipe creation failed!",
-                    "required": "title, making_time, serves, ingredients, cost"
-            }
-
-        created_recipe = crud.create_recipe(db, recipe)
-        return {
-            "message": "Recipe successfully created!",
-            "recipe": [created_recipe]
-        }
-    except Exception as e:
-        return HTTPException(
-                status_code=404,
+            err = schemas.RecipeCreateErrorResponse(
                 message="Recipe creation failed!",
                 required="title, making_time, serves, ingredients, cost"
+            )
+            return JSONResponse(status_code=200, content=err.dict())
+
+        created_recipe = crud.create_recipe(db, recipe)
+        success = schemas.RecipeCreateResponse(
+            message="Recipe successfully created!",
+            recipe=[created_recipe]
         )
+        return success
+
+    except Exception:
+        err = schemas.RecipeCreateErrorResponse(
+            message="Recipe creation failed!",
+            required="title, making_time, serves, ingredients, cost"
+        )
+        return JSONResponse(status_code=200, content=err.dict())
 
 @router.patch("/{id}", response_model=schemas.RecipeUpdateResponse)
 def update_recipe(id: str, recipe: schemas.RecipeUpdate, db: Session = Depends(get_db)):
