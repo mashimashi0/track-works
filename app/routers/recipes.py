@@ -31,20 +31,22 @@ def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
     try:
         # 必須フィールドのチェック
         if not all([recipe.title, recipe.making_time, recipe.serves, recipe.ingredients, recipe.cost]):
-            return {
-                "message": "Recipe creation failed!",
-                "required": "title, making_time, serves, ingredients, cost"
-            }
+            return HTTPException(
+                    status_code=404,
+                    message="Recipe creation failed!",
+                    required="title, making_time, serves, ingredients, cost"
+            )
         # 必須フィールドのチェック（空文字はNG、0はOK）
         empty_str_fields = any(
             isinstance(getattr(recipe, f), str) and getattr(recipe, f).strip() == ""
             for f in ("title", "making_time", "serves", "ingredients")
         )        
         if empty_str_fields or recipe.cost is None:
-            return {
-                "message": "Recipe creation failed!",
-                "required": "title, making_time, serves, ingredients, cost"
-            }
+            return HTTPException(
+                    status_code=404,
+                    message="Recipe creation failed!",
+                    required="title, making_time, serves, ingredients, cost"
+            )
 
         created_recipe = crud.create_recipe(db, recipe)
         return {
@@ -52,16 +54,20 @@ def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
             "recipe": [created_recipe]
         }
     except Exception as e:
-        return {
-            "message": "Recipe creation failed!",
-            "required": "title, making_time, serves, ingredients, cost"
-        }
+        return HTTPException(
+                status_code=404,
+                message="Recipe creation failed!",
+                required="title, making_time, serves, ingredients, cost"
+        )
 
 @router.patch("/{id}", response_model=schemas.RecipeUpdateResponse)
 def update_recipe(id: str, recipe: schemas.RecipeUpdate, db: Session = Depends(get_db)):
     updated = crud.update_recipe(db, id, recipe)
     if not updated:
-        raise HTTPException(status_code=404, detail="Not found")
+        return HTTPException(
+                status_code=404,
+                message="Not found!"
+        )
     return {
         "message": "Recipe successfully updated!",
         "recipe": [updated]  # リストとして返す
@@ -71,5 +77,8 @@ def update_recipe(id: str, recipe: schemas.RecipeUpdate, db: Session = Depends(g
 def delete_recipe(id: str, db: Session = Depends(get_db)):
     ok = crud.delete_recipe(db, id)
     if not ok:
-        return {"message": "No Recipe found"}
+        return HTTPException(
+                status_code=404,
+                message="No Recipe found"
+        )
     return {  "message": "Recipe successfully removed!" }
