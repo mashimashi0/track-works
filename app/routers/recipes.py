@@ -32,6 +32,12 @@ def get_recipe(id: str, db: Session = Depends(get_db)):
 @router.post("/", response_model=Union[schemas.RecipeCreateResponse, schemas.RecipeCreateErrorResponse])
 def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
     try:
+        # 必須フィールドのチェック
+        if not all([recipe.title, recipe.making_time, recipe.serves, recipe.ingredients, recipe.cost]):
+            return {
+                "message": "Recipe creation failed!",
+                "required": "title, making_time, serves, ingredients, cost"
+            }        
         # 必須フィールドのチェック（空文字はNG、0はOK）
         empty_str_fields = any(
             isinstance(getattr(recipe, f), str) and getattr(recipe, f).strip() == ""
