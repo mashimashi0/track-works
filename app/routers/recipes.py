@@ -31,22 +31,20 @@ def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
     try:
         # 必須フィールドのチェック
         if not all([recipe.title, recipe.making_time, recipe.serves, recipe.ingredients, recipe.cost]):
-            return HTTPException(
-                    status_code=404,
-                    message="Recipe creation failed!",
-                    required="title, making_time, serves, ingredients, cost"
-            )
+            return {
+                    "message": "Recipe creation failed!",
+                    "required": "title, making_time, serves, ingredients, cost"
+            }
         # 必須フィールドのチェック（空文字はNG、0はOK）
         empty_str_fields = any(
             isinstance(getattr(recipe, f), str) and getattr(recipe, f).strip() == ""
             for f in ("title", "making_time", "serves", "ingredients")
         )        
         if empty_str_fields or recipe.cost is None:
-            return HTTPException(
-                    status_code=404,
-                    message="Recipe creation failed!",
-                    required="title, making_time, serves, ingredients, cost"
-            )
+            return {
+                    "message": "Recipe creation failed!",
+                    "required": "title, making_time, serves, ingredients, cost"
+            }
 
         created_recipe = crud.create_recipe(db, recipe)
         return {
