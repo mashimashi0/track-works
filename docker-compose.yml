@@ -2,29 +2,37 @@ version: "3"
 
 services:
   db:
-    image: mysql:8
-    container_name: mysql-db
-    restart: always
+    image: postgres:15
+    restart: unless-stopped
+    env_file:
+      - .env
     environment:
-      MYSQL_ROOT_PASSWORD: yourpassword
-      MYSQL_DATABASE: recipes
-      MYSQL_USER: appuser
-      MYSQL_PASSWORD: appuserpass
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     ports:
-      - "3306:3306"
+      - "5432:5432"
     volumes:
-      - db_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   app:
     build: .
     container_name: fastapi-app
     restart: always
+    env_file:
+      - .env
     environment:
-      DATABASE_URL: mysql+mysqlconnector://appuser:appuserpass@db:3306/recipes
+      DATABASE_URL: ${DATABASE_URL}
     ports:
       - "8000:8000"
     depends_on:
       - db
 
 volumes:
-  db_data:
+  postgres_data:
