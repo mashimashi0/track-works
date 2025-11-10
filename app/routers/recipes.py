@@ -42,7 +42,7 @@ def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
                 message="Recipe creation failed!",
                 required="title, making_time, serves, ingredients, cost"
             )
-            return JSONResponse(status_code=200, content=err.dict())
+            return JSONResponse(status_code=200, content=err)
 
         created_recipe = crud.create_recipe(db, recipe)
         success = schemas.RecipeCreateResponse(
@@ -56,7 +56,7 @@ def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
             message="Recipe creation failed!",
             required="title, making_time, serves, ingredients, cost"
         )
-        return JSONResponse(status_code=200, content=err.dict())
+        return JSONResponse(status_code=200, content=err)
 
 @router.patch("/{id}", response_model=schemas.RecipeUpdateResponse)
 def update_recipe(id: str, recipe: schemas.RecipeUpdate, db: Session = Depends(get_db)):
