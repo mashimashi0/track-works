@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request
 from .routers import recipes
 from .database import Base, engine
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
 
 app = FastAPI()
 
@@ -16,4 +17,14 @@ async def all_exception_handler(request: Request, exc: Exception):
     return JSONResponse(
         status_code=404,
         content={"message": "Not Found"}
+    )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=200,  # または必要なステータスコード
+        content={
+            "message": "Recipe creation failed!",
+            "required": "title, making_time, serves, ingredients, cost"
+        }
     )
