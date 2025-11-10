@@ -41,8 +41,12 @@ class RecipeCreateErrorResponse(BaseModel):
     message: str
     required: str
 
-class RecipeDetailsResponse(BaseModel):
+class RecipeListResponse(BaseModel):
     recipes: list[Recipe]
+
+class RecipeDetailsResponse(BaseModel):
+    message: str
+    recipe: list[Recipe]
 
 class RecipeUpdateResponse(BaseModel):
     message: str

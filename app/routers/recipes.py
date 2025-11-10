@@ -14,9 +14,10 @@ def get_db():
     finally:
         db.close()
 
-@router.get("/", response_model=list[schemas.Recipe])
+@router.get("/", response_model=schemas.RecipeListResponse)
 def list_recipes(db: Session = Depends(get_db)):
-    return crud.get_recipes(db)
+    recipes = crud.get_recipes(db)
+    return {"recipes": recipes}
 
 @router.get("/{id}", response_model=schemas.RecipeDetailsResponse)
 def get_recipe(id: str, db: Session = Depends(get_db)):
@@ -24,7 +25,8 @@ def get_recipe(id: str, db: Session = Depends(get_db)):
     if not recipe:
         raise HTTPException(status_code=404, detail="Not found")
     return {
-        "recipes": [recipe]  # リストとして返す
+        "message": "Recipe details by id",
+        "recipe": [recipe]  # リストとして返す
     }
 
 @router.post("/", response_model=Union[schemas.RecipeCreateResponse, schemas.RecipeCreateErrorResponse])
