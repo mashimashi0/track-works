@@ -38,12 +38,10 @@ def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
             for f in ("title", "making_time", "serves", "ingredients")
         )
         if empty_str_fields or recipe.cost is None:
-            err = schemas.RecipeCreateErrorResponse(
-                message="Recipe creation failed!",
-                required="title, making_time, serves, ingredients, cost"
-            )
-            return JSONResponse(status_code=200, content=err)
-
+            return{
+                "message": "Recipe creation failed!",
+                "required": "title, making_time, serves, ingredients, cost"
+            }
         created_recipe = crud.create_recipe(db, recipe)
         return {
             "message": "Recipe successfully created!",
@@ -51,11 +49,10 @@ def create_recipe(recipe: schemas.RecipeCreate, db: Session = Depends(get_db)):
         }
 
     except Exception:
-        err = schemas.RecipeCreateErrorResponse(
-            message="Recipe creation failed!",
-            required="title, making_time, serves, ingredients, cost"
-        )
-        return JSONResponse(status_code=200, content=err)
+        return{
+            "message": "Recipe creation failed!",
+            "required": "title, making_time, serves, ingredients, cost"
+        }
 
 @router.patch("/{id}", response_model=schemas.RecipeUpdateResponse)
 def update_recipe(id: str, recipe: schemas.RecipeUpdate, db: Session = Depends(get_db)):
